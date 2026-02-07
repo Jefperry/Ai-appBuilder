@@ -1,0 +1,247 @@
+@import "@liveblocks/react-ui/styles.css";
+@import "@liveblocks/react-ui/styles/dark/media-query.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --accent: #00ff88;
+  --accent-secondary: #00cc6a;
+  --inner-app-width: 36rem;
+  --craft-bg: #0a0f0a;
+  --craft-surface: #141a14;
+  --craft-border: #2a3a2a;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: rgba(20, 26, 20, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(42, 58, 42, 0.5);
+}
+
+.glass-light {
+  background: rgba(20, 26, 20, 0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(42, 58, 42, 0.3);
+}
+
+/* Gradient border utility */
+.gradient-border {
+  position: relative;
+  background: var(--craft-surface);
+  border-radius: 1rem;
+}
+
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, #00ff88, #00cc6a);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+
+.gradient-border:hover::before {
+  opacity: 1;
+}
+
+/* Animated Logo */
+.logo-icon {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+.logo-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  animation: logo-spin 3s linear infinite;
+}
+
+.logo-ring-1 {
+  inset: 0;
+  border-top-color: #00ff88;
+  border-right-color: #00ff88;
+}
+
+.logo-ring-2 {
+  inset: 8px;
+  border-bottom-color: #00cc6a;
+  border-left-color: #00cc6a;
+  animation-direction: reverse;
+  animation-duration: 2s;
+}
+
+.logo-ring-3 {
+  inset: 16px;
+  border-top-color: #00ff88;
+  animation-duration: 4s;
+}
+
+.logo-center {
+  position: absolute;
+  inset: 24px;
+  background: radial-gradient(circle, #00ff88 0%, #00cc6a 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+}
+
+@keyframes logo-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Glow effects */
+.glow-green {
+  box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+}
+
+/* Primary Button */
+.btn-primary {
+  background: var(--accent);
+  color: #0a0f0a;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 0 25px rgba(0, 255, 136, 0.4);
+  transform: translateY(-1px);
+}
+
+/* Secondary Button */
+.btn-secondary {
+  background: transparent;
+  color: white;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: 1px solid var(--craft-border);
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Monaco Editor Dark Theme Highlights */
+.monaco-editor .generated-line-highlight {
+  background-color: rgba(0, 255, 136, 0.1) !important;
+  animation: pulse-highlight 1s ease-in-out infinite;
+}
+
+.monaco-editor .generated-character-highlight {
+  background-color: rgba(0, 255, 136, 0.4) !important;
+  color: white !important;
+}
+
+@keyframes pulse-highlight {
+  0%, 100% { background-color: rgba(0, 255, 136, 0.05); }
+  50% { background-color: rgba(0, 255, 136, 0.15); }
+}
+
+/* Liveblocks AI Chat - Dark Theme Override */
+.lb-ai-chat {
+  position: relative;
+  --lb-background: var(--craft-surface);
+  --lb-foreground: #ffffff;
+}
+
+.lb-ai-chat-composer {
+  --lb-radius: 8px;
+}
+
+.lb-ai-chat-footer {
+  padding: 0 theme("spacing[2.5]") theme("spacing[2.5]");
+}
+
+.lb-root {
+  font-size: 14px;
+  --lb-accent: var(--accent);
+  --lb-radius: theme("borderRadius.lg");
+  --lb-spacing: 0.6rem;
+  --lb-ai-chat-container-width: var(--inner-app-width);
+  --lb-background: var(--craft-surface);
+  --lb-foreground: #ffffff;
+}
+
+.lb-portal {
+  z-index: 30;
+}
+
+.sp-navigator {
+  margin-bottom: -1px;
+}
+
+/* Scrollbar styling for dark theme */
+.monaco-scrollable-element > .scrollbar > .slider {
+  background: rgba(0, 255, 136, 0.3) !important;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--craft-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--craft-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3a4a3a;
+}
+
+/* Typography */
+h1 {
+  font-size: 2.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+/* Input styling */
+input::placeholder,
+textarea::placeholder {
+  color: #6b7b6b;
+}
+
+/* Focus states */
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.1);
+}
+
+/* Text gradient */
+.text-gradient {
+  background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
