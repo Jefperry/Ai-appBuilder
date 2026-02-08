@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useMutation, useStorage } from "@liveblocks/react";
+import { PromptInputBox } from "@/components/ui/ai-prompt-box";
 
 interface Message {
   id: string;
@@ -18,7 +19,6 @@ const suggestions = [
 
 export default function Chat({ chatId }: { chatId: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -35,7 +35,7 @@ export default function Chat({ chatId }: { chatId: string }) {
     scrollToBottom();
   }, [messages]);
 
-  const sendMessage = async (content: string) => {
+  const sendMessage = async (content: string, files?: File[]) => {
     if (!content.trim() || isLoading) return;
 
     const userMessage: Message = {
@@ -45,7 +45,6 @@ export default function Chat({ chatId }: { chatId: string }) {
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    setInput("");
     setIsLoading(true);
 
     try {
@@ -89,11 +88,6 @@ export default function Chat({ chatId }: { chatId: string }) {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    sendMessage(input);
-  };
-
   return (
     <div className="flex flex-col h-full bg-craft-surface">
       {/* Messages area */}
@@ -118,28 +112,14 @@ export default function Chat({ chatId }: { chatId: string }) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input area */}
-      <form onSubmit={handleSubmit} className="p-4 border-t border-craft-border">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask CodeCraft to build something..."
-            className="flex-1 px-4 py-2.5 bg-craft-card border border-craft-border rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/50 text-sm transition-all"
-            disabled={isLoading}
-          />
-          <button
-            type="submit"
-            disabled={isLoading || !input.trim()}
-            className="px-4 py-2.5 rounded-xl font-medium bg-accent text-craft-bg hover:shadow-glow transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-            </svg>
-          </button>
-        </div>
-      </form>
+      {/* AI Prompt Input */}
+      <div className="p-4 border-t border-craft-border">
+        <PromptInputBox
+          onSend={sendMessage}
+          isLoading={isLoading}
+          placeholder="Ask CodeCraft to build something..."
+        />
+      </div>
     </div>
   );
 }
