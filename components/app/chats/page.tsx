@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { nanoid } from "@liveblocks/core";
@@ -10,6 +10,34 @@ import { Timestamp } from "@liveblocks/react-ui/primitives";
 
 import { PlusIcon } from "@/components/icons/plus";
 import { TrashIcon } from "@/components/icons/trash";
+
+const STORAGE_KEY = "codecraft-chat-names";
+
+/** Read custom chat names from localStorage */
+function getCustomNames(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+/** Save a custom name for a chat */
+function saveCustomName(chatId: string, name: string) {
+  const names = getCustomNames();
+  if (name.trim()) {
+    names[chatId] = name.trim();
+  } else {
+    delete names[chatId];
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(names));
+}
+
+/** Get the display name for a chat (custom name → Liveblocks title → "Untitled") */
+function getDisplayName(chatId: string, liveblocksTitle: string, customNames: Record<string, string>): string {
+  return customNames[chatId] || liveblocksTitle || "Untitled";
+}
 
 function NewChatButton({ className }: { className?: string }) {
   const router = useRouter();
@@ -30,17 +58,58 @@ export default function Chats() {
   const { chats } = useAiChats();
   const deleteAiChat = useDeleteAiChat();
   const [query, setQuery] = useState("");
+  const [customNames, setCustomNames] = useState<Record<string, string>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const editInputRef = useRef<HTMLInputElement>(null);
 
-  // Allow filtering chats by title
-  const filteredChats = useMemo(() => {
-    if (!query || !chats) {
-      return chats;
+  // Load custom names from localStorage on mount
+  useEffect(() => {
+    setCustomNames(getCustomNames());
+  }, []);
+
+  // Focus the edit input when editing starts
+  useEffect(() => {
+    if (editingId && editInputRef.current) {
+      editInputRef.current.focus();
+      editInputRef.current.select();
     }
+  }, [editingId]);
 
-    return chats.filter(({ title }) =>
-      title.toLowerCase().includes(query.toLowerCase())
+  const startEditing = useCallback((chatId: string, currentName: string) => {
+    setEditingId(chatId);
+    setEditValue(currentName);
+  }, []);
+
+  const confirmEdit = useCallback(() => {
+    if (editingId) {
+      saveCustomName(editingId, editValue);
+      setCustomNames(getCustomNames());
+      setEditingId(null);
+      setEditValue("");
+    }
+  }, [editingId, editValue]);
+
+  const cancelEdit = useCallback(() => {
+    setEditingId(null);
+    setEditValue("");
+  }, []);
+
+  // Filter chats by display name (custom name → title → "Untitled")
+  const filteredChats = useMemo(() => {
+    if (!chats) return chats;
+
+    const withDisplayNames = chats.map((chat) => ({
+      ...chat,
+      displayName: getDisplayName(chat.id, chat.title, customNames),
+    }));
+
+    if (!query) return withDisplayNames;
+
+    return withDisplayNames.filter(({ displayName }) =>
+      displayName.toLowerCase().includes(query.toLowerCase())
     );
-  }, [query, chats]);
+  }, [query, chats, customNames]);
 
   if (!chats || !filteredChats) {
     return (
@@ -115,29 +184,74 @@ export default function Chats() {
 
       {filteredChats.length > 0 && (
         <ul className="flex flex-col gap-3 p-0 relative z-10">
-          {filteredChats.map((chat) => (
-            <li
-              key={chat.id}
-              className="group list-none bg-craft-surface hover:bg-craft-card border border-craft-border hover:border-accent/50 px-5 py-4 rounded-xl flex justify-between isolate relative gap-2 transition-all duration-200 hover:shadow-glow"
-            >
-              <Link href={`/${chat.id}`} className="absolute inset-0" />
-              <div>
-                <div className="truncate text-sm text-white font-medium">
-                  {chat.title || "Untitled"}
-                </div>
-                <div className="text-slate-500 text-xs mt-1">
-                  Last message{" "}
-                  <Timestamp date={chat.lastMessageAt || chat.createdAt} />
-                </div>
-              </div>
-              <button 
-                onClick={() => deleteAiChat(chat.id)} 
-                className="z-10 p-2 rounded-lg hover:bg-red-500/10 transition-colors"
+          {filteredChats.map((chat) => {
+            const isEditing = editingId === chat.id;
+            return (
+              <li
+                key={chat.id}
+                className="group list-none bg-craft-surface hover:bg-craft-card border border-craft-border hover:border-accent/50 px-5 py-4 rounded-xl flex justify-between isolate relative gap-2 transition-all duration-200 hover:shadow-glow"
               >
-                <TrashIcon className="text-red-400 size-4 hidden group-hover:block" />
-              </button>
-            </li>
-          ))}
+                {!isEditing && <Link href={`/${chat.id}`} className="absolute inset-0" />}
+                <div className="flex-1 min-w-0">
+                  {isEditing ? (
+                    <input
+                      ref={editInputRef}
+                      type="text"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") confirmEdit();
+                        if (e.key === "Escape") cancelEdit();
+                      }}
+                      onBlur={confirmEdit}
+                      className="w-full text-sm text-white font-medium bg-craft-bg border border-accent rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-accent/50 z-20 relative"
+                      placeholder="Chat name…"
+                    />
+                  ) : (
+                    <div className="truncate text-sm text-white font-medium">
+                      {chat.displayName}
+                    </div>
+                  )}
+                  <div className="text-slate-500 text-xs mt-1">
+                    Last message{" "}
+                    <Timestamp date={chat.lastMessageAt || chat.createdAt} />
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 z-10">
+                  {/* Edit button */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (isEditing) {
+                        confirmEdit();
+                      } else {
+                        startEditing(chat.id, chat.displayName);
+                      }
+                    }}
+                    className="p-2 rounded-lg hover:bg-accent/10 transition-colors"
+                    title="Rename chat"
+                  >
+                    <svg className="w-4 h-4 text-slate-400 hover:text-accent hidden group-hover:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                  {/* Delete button */}
+                  <button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      deleteAiChat(chat.id);
+                    }}
+                    className="p-2 rounded-lg hover:bg-red-500/10 transition-colors"
+                    title="Delete chat"
+                  >
+                    <TrashIcon className="text-red-400 size-4 hidden group-hover:block" />
+                  </button>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
