@@ -99,16 +99,12 @@ export default function Chats() {
   const filteredChats = useMemo(() => {
     if (!chats) return chats;
 
-    const withDisplayNames = chats.map((chat) => ({
-      ...chat,
-      displayName: getDisplayName(chat.id, chat.title, customNames),
-    }));
+    if (!query) return chats;
 
-    if (!query) return withDisplayNames;
-
-    return withDisplayNames.filter(({ displayName }) =>
-      displayName.toLowerCase().includes(query.toLowerCase())
-    );
+    return chats.filter((chat) => {
+      const name = getDisplayName(chat.id, chat.title, customNames);
+      return name.toLowerCase().includes(query.toLowerCase());
+    });
   }, [query, chats, customNames]);
 
   if (!chats || !filteredChats) {
@@ -209,7 +205,7 @@ export default function Chats() {
                     />
                   ) : (
                     <div className="truncate text-sm text-white font-medium">
-                      {chat.displayName}
+                      {getDisplayName(chat.id, chat.title, customNames)}
                     </div>
                   )}
                   <div className="text-slate-500 text-xs mt-1">
@@ -226,7 +222,7 @@ export default function Chats() {
                       if (isEditing) {
                         confirmEdit();
                       } else {
-                        startEditing(chat.id, chat.displayName);
+                        startEditing(chat.id, getDisplayName(chat.id, chat.title, customNames));
                       }
                     }}
                     className="p-2 rounded-lg hover:bg-accent/10 transition-colors"
